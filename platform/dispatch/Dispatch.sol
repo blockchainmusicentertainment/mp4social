@@ -420,13 +420,13 @@ contract Dispatch is Destructible, DispatchInterface, Upgradable {
 /*
 /* For use in example contract, see TestContracts.sol
 /*
-/* When User Contract calls ZapDispatch.query(),
-/* 1 oracle specific dot is escrowed by ZapBondage and Incoming event is ted.
+/* When User Contract calls MP3Dispatch.query(),
+/* 1 oracle specific dot is escrowed by MP3Bondage and Incoming event is ted.
 /*
 /* When provider's client hears an Incoming event containing provider's address and responds,
-/* the provider calls a ZapDispatch.respondX function corresponding to number of response params.
+/* the provider calls a MP3Dispatch.respondX function corresponding to number of response params.
 /*
-/* Dots are moved from ZapBondage escrow to data-provider's bond Holder struct,
+/* Dots are moved from MP3Bondage escrow to data-provider's bond Holder struct,
 /* with data provider address set as self's address.
 /*/
 
