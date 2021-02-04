@@ -14,7 +14,7 @@ contract Arbiter is Destructible, ArbiterInterface, Upgradable {
         address indexed provider,          // Etheruem address of the provider
         address indexed subscriber,        // Ethereum address of the subscriber
         uint256 publicKey,                 // Public key of the subscriber
-        uint256 indexed amount,            // Amount (in 1/100 ZAP) of ethereum sent
+        uint256 indexed amount,            // Amount (in 1/100 MP3) of ethereum sent
         bytes32[] endpointParams,          // Endpoint specific(nonce,encrypted_uuid),
         bytes32 endpoint                   // Endpoint specifier
     );
@@ -281,8 +281,8 @@ contract Arbiter is Destructible, ArbiterInterface, Upgradable {
     * 'holders', holderAddress, 'initialized', oracleAddress => {uint256} 1 -> provider-subscriber initialized, 0 -> not initialized
     * 'holders', holderAddress, 'bonds', oracleAddress, endpoint => {uint256} number of dots this address has bound to this endpoint
     * 'oracles', oracleAddress, endpoint, 'broker' => {address} address of endpoint broker, 0 if none
-    * 'escrow', holderAddress, oracleAddress, endpoint => {uint256} amount of Zap that have been escrowed
-    * 'totalBound', oracleAddress, endpoint => {uint256} amount of Zap bound to this endpoint
+    * 'escrow', holderAddress, oracleAddress, endpoint => {uint256} amount of MP3 that have been escrowed
+    * 'totalBound', oracleAddress, endpoint => {uint256} amount of MP3 bound to this endpoint
     * 'totalIssued', oracleAddress, endpoint => {uint256} number of dots issued by this endpoint
     * 'holders', holderAddress, 'oracleList' => {address[]} array of oracle addresses associated with this holder
     ****************************************************************************************/
