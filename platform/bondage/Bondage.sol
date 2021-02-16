@@ -10,7 +10,7 @@ import "hardhat/console.sol";
 contract Bondage is Destructible, BondageInterface, Upgradable {
     DatabaseInterface public db;
 
-    event Bound(address indexed holder, address indexed oracle, bytes32 indexed endpoint, uint256 numMP3, uint256 numDots);
+    event Bound(address indexed holder, address indexed oracle, bytes32 indexed endpoint, uint256 numMP4, uint256 numDots);
     event Unbound(address indexed holder, address indexed oracle, bytes32 indexed endpoint, uint256 numDots);
     event Escrowed(address indexed holder, address indexed oracle, bytes32 indexed endpoint, uint256 numDots);
     event Released(address indexed holder, address indexed oracle, bytes32 indexed endpoint, uint256 numDots);
@@ -39,28 +39,28 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
         db = DatabaseInterface(databaseAddress);
         arbiterAddress = coordinator.getContract("ARBITER");
         dispatchAddress = coordinator.getContract("DISPATCH");
-        token = ERC20(coordinator.getContract("MP3_TOKEN"));
+        token = ERC20(coordinator.getContract("MP4_TOKEN"));
         currentCost = CurrentCostInterface(coordinator.getContract("CURRENT_COST"));
     }
 
     /// @dev will bond to an oracle
-    /// @return total MP3 bound to oracle
+    /// @return total MP4 bound to oracle
     function bond(address oracleAddress, bytes32 endpoint, uint256 numDots) external returns (uint256 bound) {
         bound = _bond(msg.sender, oracleAddress, endpoint, numDots);
         emit Bound(msg.sender, oracleAddress, endpoint, bound, numDots);
     }
 
-    /// @return total MP3 unbound from oracle
+    /// @return total MP4 unbound from oracle
     function unbond(address oracleAddress, bytes32 endpoint, uint256 numDots) external returns (uint256 unbound) {
         unbound = _unbond(msg.sender, oracleAddress, endpoint, numDots);
         emit Unbound(msg.sender, oracleAddress, endpoint, numDots);
     }
 
     /// @dev will bond to an oracle on behalf of some holder
-    /// @return total MP3 bound to oracle
-    function delegateBond(address holderAddress, address oracleAddress, bytes32 endpoint, uint256 numDots) external returns (uint256 boundMP3) {
-        boundMP3 = _bond(holderAddress, oracleAddress, endpoint, numDots);
-        emit Bound(holderAddress, oracleAddress, endpoint, boundMP3, numDots);
+    /// @return total MP4 bound to oracle
+    function delegateBond(address holderAddress, address oracleAddress, bytes32 endpoint, uint256 numDots) external returns (uint256 boundMP4) {
+        boundMP4 = _bond(holderAddress, oracleAddress, endpoint, numDots);
+        emit Bound(holderAddress, oracleAddress, endpoint, boundMP4, numDots);
     }
 
     /// @dev Move numDots dots from provider-requester to bondage according to
@@ -131,14 +131,14 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
 
     /// @dev Calculate quantity of tokens required for specified amount of dots
     /// for endpoint defined by endpoint and data provider defined by oracleAddress
-    function calcMP3ForDots(
+    function calcMP4ForDots(
         address oracleAddress,
         bytes32 endpoint,
         uint256 numDots
     )
         external
         view
-        returns (uint256 numZap)
+        returns (uint256 numMP4)
     {
         uint256 issued = getDotsIssued(oracleAddress, endpoint);
         return currentCost._costOfNDots(oracleAddress, endpoint, issued + 1, numDots - 1);
@@ -175,9 +175,9 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
     }
 
 
-    /// @return total MP3 held by contract
-    function getMP3Bound(address oracleAddress, bytes32 endpoint) public view returns (uint256) {
-        return getNumMP3(oracleAddress, endpoint);
+    /// @return total MP4 held by contract
+    function getMP4Bound(address oracleAddress, bytes32 endpoint) public view returns (uint256) {
+        return getNumMP4(oracleAddress, endpoint);
     }
 
     function _bond(
@@ -202,10 +202,10 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
         uint256 issued = getDotsIssued(oracleAddress, endpoint);
         require(issued + numDots <= dotLimit(oracleAddress, endpoint), "Error: Dot limit exceeded");
 
-        uint256 numMP3 = currentCost._costOfNDots(oracleAddress, endpoint, issued + 1, numDots - 1);
+        uint256 numMP4 = currentCost._costOfNDots(oracleAddress, endpoint, issued + 1, numDots - 1);
 
-        // User must have approved contract to transfer working MP3
-        require(token.transferFrom(msg.sender, address(this), numMP3), "Error: User must have approved contract to transfer MP3");
+        // User must have approved contract to transfer working MP4
+        require(token.transferFrom(msg.sender, address(this), numMP4), "Error: User must have approved contract to transfer MP4");
 
         if (!isProviderInitialized(holderAddress, oracleAddress)) {
             setProviderInitialized(holderAddress, oracleAddress);
@@ -214,9 +214,9 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
 
         updateBondValue(holderAddress, oracleAddress, endpoint, numDots, "add");
         updateTotalIssued(oracleAddress, endpoint, numDots, "add");
-        updateTotalBound(oracleAddress, endpoint, numMP3, "add");
+        updateTotalBound(oracleAddress, endpoint, numMP4, "add");
 
-        return numMP3;
+        return numMP4;
     }
 
     function _unbond(
@@ -226,7 +226,7 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
         uint256 numDots
     )
         private
-        returns (uint256 numMP3)
+        returns (uint256 numMP4)
     {
         address broker = getEndpointBroker(oracleAddress, endpoint);
 
@@ -241,17 +241,17 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
 
         // Get the value of the dots
         uint256 issued = getDotsIssued(oracleAddress, endpoint);
-        numMP3 = currentCost._costOfNDots(oracleAddress, endpoint, issued + 1 - numDots, numDots - 1);
+        numMP4 = currentCost._costOfNDots(oracleAddress, endpoint, issued + 1 - numDots, numDots - 1);
 
         // Update the storage values
-        updateTotalBound(oracleAddress, endpoint, numMP3, "sub");
+        updateTotalBound(oracleAddress, endpoint, numMP4, "sub");
         updateTotalIssued(oracleAddress, endpoint, numDots, "sub");
         updateBondValue(holderAddress, oracleAddress, endpoint, numDots, "sub");
 
         // Do the transfer
-        require(token.transfer(msg.sender, numMP3), "Error: Transfer failed");
+        require(token.transfer(msg.sender, numMP4), "Error: Transfer failed");
 
-        return numMP3;
+        return numMP4;
     }
 
     /**** Get Methods ****/
@@ -326,13 +326,13 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
         db.setNumber(keccak256(abi.encodePacked('holders', holderAddress, 'bonds', oracleAddress, endpoint)), bondValue);
     }
 
-    function updateTotalBound(address oracleAddress, bytes32 endpoint, uint256 numMP3, bytes32 op) internal {
+    function updateTotalBound(address oracleAddress, bytes32 endpoint, uint256 numMP4, bytes32 op) internal {
         uint256 totalBound = db.getNumber(keccak256(abi.encodePacked('totalBound', oracleAddress, endpoint)));
 
         if (op == "sub"){
-            totalBound -= numMP3;
+            totalBound -= numMP4;
         } else if (op == "add") {
-            totalBound += numMP3;
+            totalBound += numMP4;
         }
         else {
             revert();
@@ -361,8 +361,8 @@ contract Bondage is Destructible, BondageInterface, Upgradable {
     * 'holders', holderAddress, 'initialized', oracleAddress => {uint256} 1 -> provider-subscriber initialized, 0 -> not initialized
     * 'holders', holderAddress, 'bonds', oracleAddress, endpoint => {uint256} number of dots this address has bound to this endpoint
     * 'oracles', oracleAddress, endpoint, 'broker' => {address} address of endpoint broker, 0 if none
-    * 'escrow', holderAddress, oracleAddress, endpoint => {uint256} amount of MP3 that have been escrowed
-    * 'totalBound', oracleAddress, endpoint => {uint256} amount of MP3 bound to this endpoint
+    * 'escrow', holderAddress, oracleAddress, endpoint => {uint256} amount of MP4 that have been escrowed
+    * 'totalBound', oracleAddress, endpoint => {uint256} amount of MP4 bound to this endpoint
     * 'totalIssued', oracleAddress, endpoint => {uint256} number of dots issued by this endpoint
     * 'holders', holderAddress, 'oracleList' => {address[]} array of oracle addresses associated with this holder
     ****************************************************************************************/
